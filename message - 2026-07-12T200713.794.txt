@@ -1,0 +1,30 @@
+local GunmodsSection = Tabs.Combat:AddRightGroupbox('Gun Modifications')
+GunmodsSection:AddToggle('NoRecoil', { Text = 'No Recoil', Default = true, Callback = function(v) getgenv().norecoilenabled = v end })
+GunmodsSection:AddToggle('NoGunSwayToggle', { Text = 'No Gun Sway', Default = false, Callback = setNoGunSway })
+GunmodsSection:AddToggle('NoGunBobToggle', { Text = 'No Gun Bob', Default = false, Callback = setNoGunBob })
+
+local function enableInstantAim()
+    for _, v in next, getgc(true) do
+        if type(v) == 'table' then
+            for i, val in next, v do
+                if type(i) == 'string' and i:find('GunAim') then
+                    if type(val) == 'number' then v[i] = 100000000
+                    elseif type(val) == 'function' then hookfunction(val, function() return 100000000 end) end
+                end
+            end
+        end
+    end
+end
+GunmodsSection:AddToggle('InstantAim', { Text = 'Instant Aim', Default = false, Callback = function(state) if state then enableInstantAim() end end })
+GunmodsSection:AddToggle('SilentReload', { Text = 'Silent Reload', Default = false, Callback = function(state)
+    gameObjects.silentReloadEnabled = state
+    if gameObjects.silentReloadThread then task.cancel(gameObjects.silentReloadThread); gameObjects.silentReloadThread = nil end
+    if state then
+        gameObjects.silentReloadThread = task.spawn(function()
+            while gameObjects.silentReloadEnabled do
+                pcall(function() ReplicatedStorage.GunSystem.Event.GunEvent.GunReloadStart:FireServer() end)
+                task.wait(0)
+            end
+        end)
+    end
+end })
